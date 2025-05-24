@@ -17,6 +17,7 @@ from datetime import datetime
 from os import remove
 from re import IGNORECASE, compile
 from time import sleep
+import tempfile
 
 # PaDELPy imports
 from padelpy import padeldescriptor
@@ -62,7 +63,7 @@ def from_smiles(smiles,
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")#[:-3]
     filename = timestamp + str(random.randint(int(1e8),int(1e9)))
 
-    with open("{}.smi".format(filename), "w") as smi_file:
+    with tempfile.NamedTemporaryFile() as smi_file:
         if type(smiles) == str:
             smi_file.write(smiles)
         elif type(smiles) == list:
@@ -71,56 +72,55 @@ def from_smiles(smiles,
             raise RuntimeError("Unknown input format for `smiles`: {}".format(
                 type(smiles)
             ))
-    smi_file.close()
+        smi_file.close()
 
-    save_csv = True
-    if output_csv is None:
-        save_csv = False
-        output_csv = "{}.csv".format(timestamp)
+        save_csv = True
+        if output_csv is None:
+            save_csv = False
+            output_csv = "{}.csv".format(timestamp)
 
-    for attempt in range(3):
-        try:
-            padeldescriptor(
-                mol_dir="{}.smi".format(filename),
-                d_file=output_csv,
-                convert3d=True,
-                retain3d=True,
-                d_2d=descriptors,
-                d_3d=descriptors,
-                fingerprints=fingerprints,
-                sp_timeout=timeout,
-                retainorder=True,
-                maxruntime=maxruntime,
-                threads=threads
-            )
-            break
-        except RuntimeError as exception:
-            if attempt == 2:
+        for attempt in range(3):
+            try:
+                padeldescriptor(
+                    mol_dir=smi_file.name,
+                    d_file=output_csv,
+                    convert3d=True,
+                    retain3d=True,
+                    d_2d=descriptors,
+                    d_3d=descriptors,
+                    fingerprints=fingerprints,
+                    sp_timeout=timeout,
+                    retainorder=True,
+                    maxruntime=maxruntime,
+                    threads=threads
+                )
+                break
+            except RuntimeError as exception:
+                if attempt == 2:
+                    remove("{}.smi".format(filename))
+                    if not save_csv:
+                        sleep(0.5)
+                        try:
+                            remove(output_csv)
+                        except FileNotFoundError as e:
+                            warnings.warn(e, RuntimeWarning)
+                    raise RuntimeError(exception)
+                else:
+                    continue
+            except KeyboardInterrupt as kb_exception:
                 remove("{}.smi".format(filename))
                 if not save_csv:
-                    sleep(0.5)
                     try:
                         remove(output_csv)
                     except FileNotFoundError as e:
                         warnings.warn(e, RuntimeWarning)
-                raise RuntimeError(exception)
-            else:
-                continue
-        except KeyboardInterrupt as kb_exception:
-            remove("{}.smi".format(filename))
-            if not save_csv:
-                try:
-                    remove(output_csv)
-                except FileNotFoundError as e:
-                    warnings.warn(e, RuntimeWarning)
-            raise kb_exception
+                raise kb_exception
 
-    with open(output_csv, "r", encoding="utf-8") as desc_file:
-        reader = DictReader(desc_file)
-        rows = [row for row in reader]
-    desc_file.close()
+        with open(output_csv, "r", encoding="utf-8") as desc_file:
+            reader = DictReader(desc_file)
+            rows = [row for row in reader]
+        desc_file.close()
 
-    remove("{}.smi".format(filename))
     if not save_csv:
         remove(output_csv)
 
