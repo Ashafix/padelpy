@@ -61,9 +61,9 @@ def from_smiles(smiles,
         maxruntime = maxruntime * 1000
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")#[:-3]
-    filename = timestamp + str(random.randint(int(1e8),int(1e9)))
 
     with tempfile.NamedTemporaryFile(mode='w', suffix='.smi') as smi_file:
+        print(smi_file.name)
         if type(smiles) == str:
             smi_file.write(smiles)
         elif type(smiles) == list:
