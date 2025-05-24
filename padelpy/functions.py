@@ -35,7 +35,8 @@ def from_smiles(smiles,
                 fingerprints: bool = False,
                 timeout: int = 60,
                 maxruntime: int = -1,
-                threads: int = -1
+                threads: int = -1,
+                attempts=3,
                 ) -> OrderedDict:
     """ from_smiles: converts SMILES string to QSPR descriptors/fingerprints.
 
@@ -78,7 +79,7 @@ def from_smiles(smiles,
             save_csv = False
             output_csv = "{}.csv".format(timestamp)
 
-        for attempt in range(3):
+        for attempt in range(attempts):
             try:
                 padeldescriptor(
                     mol_dir=smi_file.name,
