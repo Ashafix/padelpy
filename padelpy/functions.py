@@ -97,7 +97,6 @@ def from_smiles(smiles,
                 break
             except RuntimeError as exception:
                 if attempt == 2:
-                    remove("{}.smi".format(filename))
                     if not save_csv:
                         sleep(0.5)
                         try:
@@ -108,7 +107,6 @@ def from_smiles(smiles,
                 else:
                     continue
             except KeyboardInterrupt as kb_exception:
-                remove("{}.smi".format(filename))
                 if not save_csv:
                     try:
                         remove(output_csv)
