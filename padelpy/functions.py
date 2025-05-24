@@ -62,7 +62,7 @@ def from_smiles(smiles,
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")#[:-3]
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.smi') as smi_file:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.smi', delete_on_close=False) as smi_file:
         print(smi_file.name)
         if type(smiles) == str:
             smi_file.write(smiles)
